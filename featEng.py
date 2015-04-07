@@ -34,23 +34,25 @@ if __name__ == "__main__":
 
     labels = []
     for line in train:
-        if not line['cat'] in labels:
-            labels.append(line['cat'])
+        if not line['position'] in labels:
+            labels.append(line['position'])
 
-    x_train = feat.train_feature(x['text'] for x in train)
-    x_test = feat.test_feature(x['text'] for x in test)
+    x_train = feat.train_feature(x['question'] for x in train)
+    x_test = feat.test_feature(x['question'] for x in test)
 
-    y_train = array(list(labels.index(x['cat']) for x in train))
+    y_train = array(list(labels.index(x['position']) for x in train))
 
     # Train classifier
     lr = SGDClassifier(loss='log', penalty='l2', shuffle=True)
     lr.fit(x_train, y_train)
 
-    feat.show_top10(lr, labels)
-
     predictions = lr.predict(x_test)
-    o = DictWriter(open("predictions.csv", 'w'), ["id", "cat"])
+    o = DictWriter(open("guess.csv", 'w'), ["id", "position"])
     o.writeheader()
+    count = 0
     for ii, pp in zip([x['id'] for x in test], predictions):
-        d = {'id': ii, 'cat': labels[pp]}
+        count+=1
+        d = {'id': ii, 'position': labels[pp]}
         o.writerow(d)
+    o.close()
+    print count
