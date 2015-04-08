@@ -5,6 +5,8 @@ from sklearn import tree
 import json
 from time import gmtime, strftime
 from sklearn.metrics import mean_squared_error
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import SVR
 
 class classify:
     
@@ -79,7 +81,8 @@ class classify:
                 
     def predict(self):
         print "In Predict"        
-        clf = tree.DecisionTreeClassifier()
+        #clf = tree.DecisionTreeClassifier()
+        clf = DecisionTreeRegressor(max_depth=100)
         clf = clf.fit(self.x_train, self.y)
         self.predictions = clf.predict(self.x_test)
 
@@ -94,7 +97,9 @@ class classify:
     def getAccuracy(self):
         
         print "In getAccuracy"
-        clf = tree.DecisionTreeClassifier()
+        #clf = tree.DecisionTreeClassifier()
+        
+        clf = DecisionTreeRegressor(max_depth=5)
         clf = clf.fit(self.cv_train, self.cv_y_train)
         self.predictions = clf.predict(self.cv_test)
         
