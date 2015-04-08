@@ -16,7 +16,7 @@ class classify:
         self.predictions = []
     
     def questionFeatures(self):
-        questions = list(DictReader(open("data/questions.csv", 'r')))
+        questions = list(DictReader(open("questions.csv", 'r')))
         for ques in questions:
             unigrams = {}
             #unigrams = json.loads(ques['unigrams'])
@@ -26,8 +26,8 @@ class classify:
             self.quesFeat[ques['question']] = unigrams     
             
     def readData(self):
-        self.train = list(DictReader(open("data/train.csv", 'r')))
-        self.test = list(DictReader(open("data/test.csv", 'r')))
+        self.train = list(DictReader(open("train.csv", 'r')))
+        self.test = list(DictReader(open("test.csv", 'r')))
         
         for each in self.train:
             self.y.append(each['position'])
