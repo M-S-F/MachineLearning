@@ -2,11 +2,15 @@ from csv import DictReader, DictWriter
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import tree
-import json
+import yaml
 from time import gmtime, strftime
 from sklearn.metrics import mean_squared_error
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
+from sklearn import linear_model
+from sklearn.ensemble import AdaBoostRegressor
+import ast
+from collections import defaultdict
 
 class classify:
     
@@ -25,32 +29,83 @@ class classify:
         self.cv_train = []
         self.cv_test = []
         self.cv_y_train = []
-        self.cv_y_test = []        
-    
+        self.cv_y_test = []
+        self.countries = defaultdict()
+        self.totalCountries = 0
+        with open("countries.txt", "r") as fp:
+            for word in fp:
+                word = word.lower()
+                word = word.replace("\n","")
+                spl = word.split(" ");
+                if(len(spl)>2):
+                    word = " ".join(spl[:2])
+                self.countries[word]=1
+        fp.close()
+
     def questionFeatures(self):
-        questions = list(DictReader(open("questions.csv", 'r')))
+        questions = list(DictReader(open("questions.csv", 'rU')))
         for ques in questions:
-            unigrams = {}
-            #unigrams = json.loads(ques['unigrams'])
+            unigrams = defaultdict()
             unigrams['_length_'] = len(ques['questionText'])
             unigrams['_cat_'] = ques['cat']
-            unigrams['_answer_'] = ques['answer']    
-            self.quesFeat[ques['question']] = unigrams     
+            unigrams['_answer_'] = ques['answer']
+           
+            for pos, word in ast.literal_eval(ques['unigrams']).items():
+                try:
+                    word = str(word)
+                    if(self.countries[word]):
+                        if(word in unigrams.keys()):
+                            unigrams[word]+=1
+                        else:
+                            unigrams[word]=1
+                        self.totalCountries+=1
+                except:
+                    None
+                
+                #try:
+                #    if isinstance(int(str(word)), int):
+                #        if len(str(word)) <= 3:
+                #            if "_number_" in unigrams.keys():
+                #                unigrams["_number_"]+=1
+                #            else:
+                #                unigrams["_number_"]= 1
+                #        else:
+                #            num = int(str(word))
+                #            #if(num<1900):
+                #            #    if "_number_" in unigrams.keys():
+                #            #        unigrams["_yearLt1900_"]+=1
+                #            #    else:
+                #            #        unigrams["_yearLt1900_"]= 1
+                #            #else:
+                #            #    if "_number_" in unigrams.keys():
+                #            #        unigrams["_yearGt1900_"]+=1
+                #            #    else:
+                #            #        unigrams["_yearGt1900_"]= 1
+                #            #    
+                #            #if "_year_" in unigrams.keys():
+                #            #    unigrams["_year_"]+=1
+                #            #else:
+                #            #    unigrams["_year_"]=1           
+                #except:
+                #    None
             
+            self.quesFeat[ques['question']] = unigrams     
+                
     def readData(self, accuracy):
+        print self.totalCountries
         print "In readData"
-        self.train = list(DictReader(open("train.csv", 'r')))
-        self.test = list(DictReader(open("test.csv", 'r')))
-        v = DictVectorizer(sparse=False)        
+        self.train = list(DictReader(open("train.csv", 'rU')))
+        self.test = list(DictReader(open("test.csv", 'rU')))
+        v = DictVectorizer(sparse=False)
+               
         ind = 0
-        
         # training set
         for each in self.train:
             features = {}
             features = self.quesFeat[each['question']]
             features['_user_'] = each['user']
             features['_question_'] = each['question']
-            #features['_answer_'] = each['answer'] 
+            #features['_answer_'] = each['answer']
             
             if(accuracy==False):
                 self.x_train.append(features)
@@ -80,9 +135,8 @@ class classify:
         
                 
     def predict(self):
-        print "In Predict"        
-        #clf = tree.DecisionTreeClassifier()
-        clf = DecisionTreeRegressor(max_depth=100)
+        print "In Predict"
+        clf = linear_model.Lasso(alpha=0.01, fit_intercept=True)
         clf = clf.fit(self.x_train, self.y)
         self.predictions = clf.predict(self.x_test)
 
@@ -99,7 +153,7 @@ class classify:
         print "In getAccuracy"
         #clf = tree.DecisionTreeClassifier()
         
-        clf = DecisionTreeRegressor(max_depth=5)
+        clf = linear_model.Lasso(alpha=0.01, fit_intercept=True)
         clf = clf.fit(self.cv_train, self.cv_y_train)
         self.predictions = clf.predict(self.cv_test)
         
@@ -126,6 +180,7 @@ if __name__ == "__main__":
     
     obj = classify()
     obj.questionFeatures()
+    
     obj.readData(args.accuracy)
     
     if(args.accuracy == True):
@@ -136,5 +191,5 @@ if __name__ == "__main__":
     print strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
     
     # play beep after finishing
-    import os
-    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % ( 1, 150))
+    #import os
+    #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % ( 1, 150))
